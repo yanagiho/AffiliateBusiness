@@ -19,3 +19,6 @@ export { shindanConfigs, getShindanConfigs, getShindanConfigBySlug } from './dat
 
 export * from './claude';
 export * from './sns';
+
+export { query } from './db';
+export { default as db } from './db';

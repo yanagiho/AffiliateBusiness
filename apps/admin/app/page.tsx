@@ -1,6 +1,5 @@
-import db, { query } from '@/lib/db';
+import { query } from '@/lib/db';
 import type { ClickLog, Offer, LPConfig, DiagnosticConfig } from '@affiliate/shared';
-import LogoutButton from '../components/LogoutButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -144,25 +143,55 @@ export default async function AdminPage() {
           ))}
         </div>
       </div>
-                <td className="px-4 py-3 text-gray-500 font-mono text-xs">{log.ip ?? '-'}</td>
-                <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
-                  {log.referer ?? '-'}
-                </td>
-              </tr>
-            ))}
-            {logs.length === 0 && (
+
+      {/* クリックログ */}
+      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <div className="px-4 py-3 border-b border-gray-200">
+          <h2 className="font-semibold text-gray-700">クリックログ（最新100件）</h2>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-sm">
+            <thead className="bg-gray-50 border-b">
               <tr>
-                <td colSpan={8} className="px-4 py-12 text-center text-gray-400">
-                  まだクリックログがありません。
-                  <br />
-                  <span className="text-sm">
-                    apps/web の /go/[offer_id] を叩くとここに表示されます。
-                  </span>
-                </td>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">オファー</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">日時</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">UTM Source</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">UTM Medium</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">UTM Campaign</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">IP</th>
+                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Referer</th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {logs.map((log) => (
+                <tr key={log.id} className="hover:bg-gray-50">
+                  <td className="px-4 py-3 text-gray-700 font-mono text-xs">{log.id}</td>
+                  <td className="px-4 py-3 text-indigo-600 font-mono text-xs">{log.offer_id}</td>
+                  <td className="px-4 py-3 text-gray-700 text-xs whitespace-nowrap">{new Date(log.clicked_at).toLocaleString('ja-JP')}</td>
+                  <td className="px-4 py-3 text-gray-500 text-xs">{log.utm_source ?? '-'}</td>
+                  <td className="px-4 py-3 text-gray-500 text-xs">{log.utm_medium ?? '-'}</td>
+                  <td className="px-4 py-3 text-gray-500 text-xs">{log.utm_campaign ?? '-'}</td>
+                  <td className="px-4 py-3 text-gray-500 font-mono text-xs">{log.ip ?? '-'}</td>
+                  <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
+                    {log.referer ?? '-'}
+                  </td>
+                </tr>
+              ))}
+              {logs.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="px-4 py-12 text-center text-gray-400">
+                    まだクリックログがありません。
+                    <br />
+                    <span className="text-sm">
+                      apps/web の /go/[offer_id] を叩くとここに表示されます。
+                    </span>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

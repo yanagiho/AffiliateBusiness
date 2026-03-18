@@ -141,6 +141,27 @@ if (isProduction && DATABASE_URL) {
 
   sqliteDb.exec(`
     CREATE TABLE IF NOT EXISTS lp_configs (
+      slug            TEXT PRIMARY KEY,
+      title           TEXT NOT NULL,
+      description     TEXT,
+      config          TEXT,
+      target_audience TEXT,
+      offer_id        TEXT,
+      content         TEXT,
+      keywords        TEXT,
+      genre           TEXT,
+      created_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+      updated_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+    )
+  `);
+
+  // Migrate existing lp_configs tables (ignore errors if columns already exist)
+  for (const col of ['target_audience TEXT', 'offer_id TEXT', 'content TEXT', 'keywords TEXT', 'genre TEXT']) {
+    try { sqliteDb.exec(`ALTER TABLE lp_configs ADD COLUMN ${col}`); } catch {}
+  }
+
+  sqliteDb.exec(`
+    CREATE TABLE IF NOT EXISTS shindan_configs (
       slug        TEXT PRIMARY KEY,
       title       TEXT NOT NULL,
       description TEXT,
@@ -151,13 +172,17 @@ if (isProduction && DATABASE_URL) {
   `);
 
   sqliteDb.exec(`
-    CREATE TABLE IF NOT EXISTS shindan_configs (
-      slug        TEXT PRIMARY KEY,
-      title       TEXT NOT NULL,
-      description TEXT,
-      config      TEXT NOT NULL, -- JSON
-      created_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
-      updated_at  TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+    CREATE TABLE IF NOT EXISTS sns_accounts (
+      id           INTEGER PRIMARY KEY AUTOINCREMENT,
+      platform     TEXT NOT NULL,
+      account_name TEXT NOT NULL,
+      api_key      TEXT,
+      api_secret   TEXT,
+      access_token  TEXT,
+      access_secret TEXT,
+      is_active    INTEGER DEFAULT 1,
+      created_at   TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+      updated_at   TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
     )
   `);
 
@@ -178,11 +203,17 @@ if (isProduction && DATABASE_URL) {
   isPostgres = false;
 }
 
-// Unified query interface
+// Convert ? placeholders to $1, $2, ... for PostgreSQL
+function toPgSql(sql: string): string {
+  let i = 0;
+  return sql.replace(/\?/g, () => `$${++i}`);
+}
+
+// Unified query interface (use ? placeholders in all SQL)
 export const query = {
   all: async (sql: string, params: any[] = []) => {
     if (isPostgres) {
-      const res = await db.query(sql, params);
+      const res = await db.query(toPgSql(sql), params);
       return res.rows;
     } else {
       return db.prepare(sql).all(...params);
@@ -190,7 +221,7 @@ export const query = {
   },
   get: async (sql: string, params: any[] = []) => {
     if (isPostgres) {
-      const res = await db.query(sql, params);
+      const res = await db.query(toPgSql(sql), params);
       return res.rows[0] || null;
     } else {
       return db.prepare(sql).get(...params);
@@ -198,7 +229,7 @@ export const query = {
   },
   run: async (sql: string, params: any[] = []) => {
     if (isPostgres) {
-      return await db.query(sql, params);
+      return await db.query(toPgSql(sql), params);
     } else {
       return db.prepare(sql).run(...params);
     }

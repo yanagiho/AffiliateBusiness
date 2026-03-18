@@ -1,5 +1,4 @@
-import db, { query } from '@/lib/db';
-import LogoutButton from '../components/LogoutButton';
+import LogoutButton from '../../components/LogoutButton';
 
 export const dynamic = 'force-dynamic';
 

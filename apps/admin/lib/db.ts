@@ -1,1 +1,1 @@
-export { default, query } from '@affiliate/shared';
+export { db as default, query } from '@affiliate/shared';

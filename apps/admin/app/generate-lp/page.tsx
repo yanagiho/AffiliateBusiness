@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { LPGenerationRequest, LPContent, Offer, SNSPostResult } from '@affiliate/shared';
-import LogoutButton from '../components/LogoutButton';
+import LogoutButton from '../../components/LogoutButton';
 
 export default function GenerateLPPage() {
   const [formData, setFormData] = useState<LPGenerationRequest & { genre?: string; snsAccountIds?: string[] }>({

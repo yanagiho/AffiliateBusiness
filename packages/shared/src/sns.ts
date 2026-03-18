@@ -1,12 +1,14 @@
 import { TwitterApi } from 'twitter-api-v2';
 import { query } from './db';
 
-const twitterClient = new TwitterApi({
-  appKey: process.env.TWITTER_API_KEY!,
-  appSecret: process.env.TWITTER_API_SECRET!,
-  accessToken: process.env.TWITTER_ACCESS_TOKEN!,
-  accessSecret: process.env.TWITTER_ACCESS_SECRET!,
-});
+function getTwitterClient(): TwitterApi {
+  return new TwitterApi({
+    appKey: process.env.TWITTER_API_KEY!,
+    appSecret: process.env.TWITTER_API_SECRET!,
+    accessToken: process.env.TWITTER_ACCESS_TOKEN!,
+    accessSecret: process.env.TWITTER_ACCESS_SECRET!,
+  });
+}
 
 export interface SNSPostData {
   title: string;
@@ -39,7 +41,7 @@ ${hashtags}`;
     // Ensure tweet is within 280 characters
     const truncatedText = tweetText.length > 280 ? tweetText.substring(0, 277) + '...' : tweetText;
 
-    const tweet = await twitterClient.v2.tweet(truncatedText);
+    const tweet = await getTwitterClient().v2.tweet(truncatedText);
 
     return {
       success: true,
@@ -79,8 +81,8 @@ export async function postToMultipleSNS(data: SNSPostData, platforms: string[] =
     // Save to database if lpSlug is provided
     if (lpSlug) {
       await query.run(
-        `INSERT INTO sns_posts (lp_slug, platform, post_id, content, success, error_msg, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`,
+        `INSERT INTO sns_posts (lp_slug, platform, post_id, content, success, error_msg)
+         VALUES (?, ?, ?, ?, ?, ?)`,
         [
           lpSlug,
           result.platform,

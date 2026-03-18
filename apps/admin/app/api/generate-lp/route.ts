@@ -23,10 +23,10 @@ export async function POST(request: NextRequest) {
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '');
 
-    // Save to database
-    const result = await query.run(
-      `INSERT INTO lp_configs (slug, title, description, target_audience, offer_id, content, keywords, genre, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))`,
+    // Save to database (omit timestamps; rely on column DEFAULTs)
+    await query.run(
+      `INSERT INTO lp_configs (slug, title, description, target_audience, offer_id, content, keywords, genre)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         slug,
         body.title,
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
       const accounts = await query.all(
         `SELECT id, platform, account_name, api_key, api_secret, access_token, access_secret
          FROM sns_accounts
-         WHERE id IN (${selectedAccountIds.map(() => '?').join(',')}) AND is_active = 1`,
+         WHERE id IN (${selectedAccountIds.map(() => '?').join(',')}) AND is_active`,
         selectedAccountIds
       );
 

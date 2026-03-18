@@ -10,10 +10,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
-        // シンプルな認証: 固定ユーザー
+        const adminUser = process.env.ADMIN_USERNAME ?? 'admin';
+        const adminPass = process.env.ADMIN_PASSWORD ?? 'password';
         if (
-          credentials.username === 'admin' &&
-          credentials.password === 'password'
+          credentials.username === adminUser &&
+          credentials.password === adminPass
         ) {
           return {
             id: 'admin',
