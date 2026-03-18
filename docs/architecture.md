@@ -73,10 +73,12 @@ CREATE TABLE click_logs (
 | apps/admin | 3001 | 管理ダッシュボード |
 | services/redirect | 3002 | 独立リダイレクトサービス |
 
-## P0 で意図的に省いたもの
+## P1 実装済み（2026-03-18 完了）
 
-- 認証（管理画面はローカル専用想定）
-- オファーのDB管理（JSON/TSハードコード）
-- 本番DB（SQLiteのみ）
-- CDN・エッジキャッシュ
-- エラーページ（/disclaimer, /privacy は未実装）
+- [x] オファー・LP設定のDB管理（SQLiteに移行、管理画面で一覧表示）
+- [x] データ移行スクリプト（TSハードコード → DB）
+- [x] 管理画面拡張（オファー/LP/診断の一覧表示）
+- [x] DBスキーマ拡張（offers, lp_configs, shindan_configsテーブル）
+- [x] 管理画面認証（NextAuth.js）
+- [x] PostgreSQL対応（本番DB）
+- [x] Vercelデプロイ設定

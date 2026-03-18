@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { lpConfigs } from '@affiliate/shared';
+import { getLPConfigBySlug } from '@affiliate/shared';
 import { LPTemplate } from '@/app/components/LPTemplate';
 
 export async function generateMetadata({
@@ -9,7 +9,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const config = lpConfigs.find((lp) => lp.slug === slug);
+  const config = await getLPConfigBySlug(slug);
   if (!config) return {};
   return { title: config.title, description: config.description };
 }
@@ -20,7 +20,7 @@ export default async function LPPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const config = lpConfigs.find((lp) => lp.slug === slug);
+  const config = await getLPConfigBySlug(slug);
   if (!config) notFound();
 
   return <LPTemplate config={config} />;

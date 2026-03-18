@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import db from '@/lib/db';
-import { offers, extractUTMParams, buildUrlWithUTM } from '@affiliate/shared';
+import { query } from '@/lib/db';
+import { getOfferById, extractUTMParams, buildUrlWithUTM } from '@affiliate/shared';
 
 export async function GET(
   request: NextRequest,
   context: { params: Promise<{ offer_id: string }> }
 ) {
   const { offer_id } = await context.params;
-  const offer = offers.find((o) => o.id === offer_id);
+  const offer = await getOfferById(offer_id);
 
   if (!offer) {
     return new NextResponse('Offer not found', { status: 404 });
@@ -22,20 +22,21 @@ export async function GET(
   const user_agent = request.headers.get('user-agent') ?? '';
   const referer = request.headers.get('referer') ?? '';
 
-  db.prepare(`
-    INSERT INTO click_logs
+  await query.run(
+    `INSERT INTO click_logs
       (offer_id, ip, user_agent, referer, utm_source, utm_medium, utm_campaign, utm_term, utm_content)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(
-    offer_id,
-    ip,
-    user_agent,
-    referer,
-    utm.utm_source,
-    utm.utm_medium,
-    utm.utm_campaign,
-    utm.utm_term,
-    utm.utm_content
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      offer_id,
+      ip,
+      user_agent,
+      referer,
+      utm.utm_source,
+      utm.utm_medium,
+      utm.utm_campaign,
+      utm.utm_term,
+      utm.utm_content
+    ]
   );
 
   return NextResponse.redirect(destUrl, { status: 302 });

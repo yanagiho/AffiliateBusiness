@@ -70,12 +70,10 @@ pnpm dev       # 全アプリ同時起動
 
 ## P1以降 TODO
 
-- [ ] オファー・LP設定のDB管理（現在はTSハードコード）
-- [ ] 管理画面認証（NextAuth.js）
-- [ ] 本番デプロイ設定（Vercel / Cloudflare Workers）
-- [ ] PostgreSQL対応（本番DB）
-- [ ] Claude API連携によるLP自動生成
-- [ ] SNS投稿自動化基盤
-- [ ] A/Bテスト機能
-- [ ] ダッシュボードのリアルタイム更新
-- [ ] 複数ジャンル・複数アカウント対応
+- [x] オファー・LP設定のDB管理（現在はTSハードコード） ← 完了
+- [x] 管理画面認証（NextAuth.js） ← 完了
+- [x] 本番デプロイ設定（Vercel / Cloudflare Workers） ← 完了
+- [x] PostgreSQL対応（本番DB） ← 完了
+- [x] Claude API連携によるLP自動生成 ← 完了
+- [x] SNS投稿自動化基盤 ← 完了
+- [x] 複数ジャンル・複数アカウント対応 ← 完了

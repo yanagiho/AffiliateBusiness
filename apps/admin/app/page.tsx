@@ -1,26 +1,51 @@
-import db from '@/lib/db';
-import type { ClickLog } from '@affiliate/shared';
+import db, { query } from '@/lib/db';
+import type { ClickLog, Offer, LPConfig, DiagnosticConfig } from '@affiliate/shared';
+import LogoutButton from '../components/LogoutButton';
 
 export const dynamic = 'force-dynamic';
 
-export default function AdminPage() {
-  const logs = db
-    .prepare('SELECT * FROM click_logs ORDER BY clicked_at DESC LIMIT 100')
-    .all() as ClickLog[];
+export default async function AdminPage() {
+  const logs = await query.all('SELECT * FROM click_logs ORDER BY clicked_at DESC LIMIT 100') as ClickLog[];
 
-  const total = db
-    .prepare('SELECT COUNT(*) as cnt FROM click_logs')
-    .get() as { cnt: number };
+  const total = await query.get('SELECT COUNT(*) as cnt FROM click_logs', []) as { cnt: number };
 
-  const byOffer = db
-    .prepare(
-      'SELECT offer_id, COUNT(*) as cnt FROM click_logs GROUP BY offer_id ORDER BY cnt DESC'
-    )
-    .all() as { offer_id: string; cnt: number }[];
+  const byOffer = await query.all(
+    'SELECT offer_id, COUNT(*) as cnt FROM click_logs GROUP BY offer_id ORDER BY cnt DESC'
+  ) as { offer_id: string; cnt: number }[];
+
+  const offers = await query.all('SELECT * FROM offers ORDER BY created_at DESC') as Offer[];
+
+  const lpConfigs = await query.all('SELECT slug, title, description, created_at FROM lp_configs ORDER BY created_at DESC') as (Pick<LPConfig, 'slug' | 'title' | 'description'> & { created_at: string })[];
+
+  const shindanConfigs = await query.all('SELECT slug, title, description, created_at FROM shindan_configs ORDER BY created_at DESC') as (Pick<DiagnosticConfig, 'slug' | 'title' | 'description'> & { created_at: string })[];
 
   return (
     <div className="max-w-6xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6 text-gray-900">クリックログ</h1>
+      <h1 className="text-2xl font-bold mb-6 text-gray-900">管理ダッシュボード</h1>
+
+      {/* タブ */}
+      <div className="mb-6">
+        <nav className="flex space-x-4" aria-label="Tabs">
+          <a href="/" className="bg-indigo-100 text-indigo-700 px-3 py-2 font-medium text-sm rounded-md">
+            クリックログ
+          </a>
+          <a href="/generate-lp" className="text-gray-500 hover:text-gray-700 px-3 py-2 font-medium text-sm rounded-md">
+            LP生成
+          </a>
+          <a href="/sns-history" className="text-gray-500 hover:text-gray-700 px-3 py-2 font-medium text-sm rounded-md">
+            SNS履歴
+          </a>
+          <button className="text-gray-500 hover:text-gray-700 px-3 py-2 font-medium text-sm rounded-md">
+            オファー管理
+          </button>
+          <button className="text-gray-500 hover:text-gray-700 px-3 py-2 font-medium text-sm rounded-md">
+            LP管理
+          </button>
+          <button className="text-gray-500 hover:text-gray-700 px-3 py-2 font-medium text-sm rounded-md">
+            診断管理
+          </button>
+        </nav>
+      </div>
 
       {/* サマリーカード */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
@@ -63,41 +88,62 @@ export default function AdminPage() {
         </div>
       )}
 
-      {/* ログテーブル */}
-      <div className="bg-white rounded-xl shadow-sm overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 border-b">
-            <tr>
-              {[
-                'ID',
-                'Offer',
-                'クリック日時',
-                'UTM Source',
-                'UTM Campaign',
-                'UTM Medium',
-                'IP',
-                'Referer',
-              ].map((h) => (
-                <th
-                  key={h}
-                  className="px-4 py-3 text-left font-semibold text-gray-600 whitespace-nowrap"
-                >
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {logs.map((log) => (
-              <tr key={log.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3 text-gray-400">{log.id}</td>
-                <td className="px-4 py-3 font-medium text-indigo-600 whitespace-nowrap">
-                  {log.offer_id}
-                </td>
-                <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{log.clicked_at}</td>
-                <td className="px-4 py-3 text-gray-600">{log.utm_source ?? '-'}</td>
-                <td className="px-4 py-3 text-gray-600">{log.utm_campaign ?? '-'}</td>
-                <td className="px-4 py-3 text-gray-600">{log.utm_medium ?? '-'}</td>
+      {/* オファー管理 */}
+      <div className="bg-white rounded-xl shadow-sm p-4 mb-8">
+        <h2 className="font-semibold text-gray-700 mb-3">オファー管理</h2>
+        <div className="space-y-2">
+          {offers.map((offer) => (
+            <div key={offer.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div>
+                <p className="font-medium text-gray-900">{offer.name}</p>
+                <p className="text-sm text-gray-600">{offer.url}</p>
+                <p className="text-xs text-gray-500">{offer.id}</p>
+              </div>
+              <button className="text-indigo-600 hover:text-indigo-800 text-sm font-medium">
+                編集
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* LP管理 */}
+      <div className="bg-white rounded-xl shadow-sm p-4 mb-8">
+        <h2 className="font-semibold text-gray-700 mb-3">LP管理</h2>
+        <div className="space-y-2">
+          {lpConfigs.map((lp) => (
+            <div key={lp.slug} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div>
+                <p className="font-medium text-gray-900">{lp.title}</p>
+                <p className="text-sm text-gray-600">{lp.description}</p>
+                <p className="text-xs text-gray-500">/{lp.slug}</p>
+              </div>
+              <button className="text-indigo-600 hover:text-indigo-800 text-sm font-medium">
+                編集
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 診断管理 */}
+      <div className="bg-white rounded-xl shadow-sm p-4 mb-8">
+        <h2 className="font-semibold text-gray-700 mb-3">診断管理</h2>
+        <div className="space-y-2">
+          {shindanConfigs.map((shindan) => (
+            <div key={shindan.slug} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div>
+                <p className="font-medium text-gray-900">{shindan.title}</p>
+                <p className="text-sm text-gray-600">{shindan.description}</p>
+                <p className="text-xs text-gray-500">/{shindan.slug}</p>
+              </div>
+              <button className="text-indigo-600 hover:text-indigo-800 text-sm font-medium">
+                編集
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
                 <td className="px-4 py-3 text-gray-500 font-mono text-xs">{log.ip ?? '-'}</td>
                 <td className="px-4 py-3 text-gray-500 max-w-xs truncate">
                   {log.referer ?? '-'}

@@ -1,49 +1,42 @@
 import type { LPConfig } from '../types';
+import { query } from '../db';
 
-export const lpConfigs: LPConfig[] = [
-  {
-    slug: 'sample',
-    title: '副業で月10万円を実現する最短ルート',
-    description: '初心者でも3ヶ月で結果を出した実績のある副業メソッドを無料公開',
-    hero: {
-      headline: '副業で月10万円を\n実現する最短ルート',
-      subheadline: '初心者でも3ヶ月で結果を出した実績あり。今すぐ無料でチェック。',
-      cta: '今すぐ無料で確認する',
-      offer_id: 'sample-offer-1',
-    },
-    features: [
-      {
-        icon: '💰',
-        title: '初期費用0円',
-        body: 'クレジットカードや特別なスキルは不要。スマートフォン1台から始められます。',
+// Function to get all LP configs
+export async function getLPConfigs(): Promise<LPConfig[]> {
+  const rows = await query.all('SELECT slug, title, description, config FROM lp_configs');
+  return rows.map((row: any) => JSON.parse(row.config)) as LPConfig[];
+}
+
+// Function to get LP config by slug
+export async function getLPConfigBySlug(slug: string): Promise<LPConfig | null> {
+  const row = await query.get(
+    'SELECT slug, title, description, config, target_audience, offer_id, content, keywords FROM lp_configs WHERE slug = ?',
+    [slug]
+  ) as any;
+
+  if (!row) return null;
+
+  // If Claude generated content exists, use it
+  if (row.content) {
+    const content = JSON.parse(row.content);
+    return {
+      slug: row.slug,
+      title: row.title,
+      description: row.description,
+      hero: {
+        headline: content.headline,
+        subheadline: content.subheadline,
+        cta: '今すぐ申し込む',
+        offer_id: row.offer_id,
       },
-      {
-        icon: '⏰',
-        title: '1日30分からOK',
-        body: '本業の合間に取り組める設計。週5時間のスキマ時間で収益化を目指せます。',
-      },
-      {
-        icon: '📈',
-        title: '成果が積み上がる仕組み',
-        body: '一度作った資産が長期間にわたって収益を生み続けます。',
-      },
-    ],
-    faq: [
-      {
-        question: '副業初心者でも大丈夫ですか？',
-        answer:
-          'はい、完全初心者の方でも始められるよう設計されています。必要なのはスマートフォンとやる気だけです。',
-      },
-      {
-        question: '本当に稼げますか？',
-        answer:
-          '収入には個人差があります。成果は努力や市場環境によって大きく異なります。副業収入を保証するものではありません。',
-      },
-      {
-        question: '会社の副業禁止規定は大丈夫ですか？',
-        answer:
-          'お勤めの会社の就業規則をご確認の上、適切な範囲でご活用ください。当サイトは副業の可否について保証するものではありません。',
-      },
-    ],
-  },
-];
+      content: content,
+    };
+  }
+
+  // Otherwise, use the legacy config format
+  return JSON.parse(row.config);
+}
+
+// For backward compatibility, keep the old array but load from DB
+// Note: This will be empty in production until we call getLPConfigs()
+export const lpConfigs: LPConfig[] = [];

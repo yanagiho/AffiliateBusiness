@@ -71,4 +71,5 @@ export interface LPConfig {
   };
   features?: LPFeature[];
   faq?: LPFaq[];
+  content?: any; // Claude generated content
 }

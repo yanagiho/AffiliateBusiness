@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { shindanConfigs } from '@affiliate/shared';
+import { getShindanConfigBySlug } from '@affiliate/shared';
 import DiagnosticEngine from './DiagnosticEngine';
 
 export async function generateMetadata({
@@ -9,7 +9,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const config = shindanConfigs.find((s) => s.slug === slug);
+  const config = await getShindanConfigBySlug(slug);
   if (!config) return {};
   return { title: config.title, description: config.description };
 }
@@ -20,7 +20,7 @@ export default async function ShindanPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const config = shindanConfigs.find((s) => s.slug === slug);
+  const config = await getShindanConfigBySlug(slug);
   if (!config) notFound();
 
   return (

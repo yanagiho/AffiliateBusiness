@@ -9,5 +9,11 @@
   "types": "./src/index.ts",
   "devDependencies": {
     "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.79.0",
+    "better-sqlite3": "^11.7.0",
+    "pg": "^8.20.0",
+    "twitter-api-v2": "^1.29.0"
   }
 }

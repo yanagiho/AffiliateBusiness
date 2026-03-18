@@ -2,8 +2,71 @@ import type { LPConfig } from '@affiliate/shared';
 
 export function LPTemplate({ config }: { config: LPConfig }) {
   const ctaUrl = (position: string) =>
-    `/go/${config.hero.offer_id}?utm_source=lp&utm_medium=${position}&utm_campaign=${config.slug}`;
+    `/go/${config.hero?.offer_id || config.content?.offerId}?utm_source=lp&utm_medium=${position}&utm_campaign=${config.slug}`;
 
+  // If Claude generated content exists, use it
+  if (config.content) {
+    const content = config.content;
+    return (
+      <div>
+        {/* Hero */}
+        <section className="bg-gradient-to-br from-indigo-900 to-indigo-700 text-white py-20 px-4">
+          <div className="max-w-3xl mx-auto text-center">
+            <h1 className="text-4xl sm:text-5xl font-extrabold leading-tight mb-6">
+              {content.headline}
+            </h1>
+            <p className="text-xl text-indigo-200 mb-10">{content.subheadline}</p>
+            <a
+              href={ctaUrl('hero')}
+              className="inline-block bg-amber-400 hover:bg-amber-300 text-gray-900 font-bold py-4 px-10 rounded-2xl text-xl transition-colors shadow-lg"
+            >
+              今すぐ申し込む
+            </a>
+          </div>
+        </section>
+
+        {/* Sections */}
+        {content.sections && content.sections.map((section: any, index: number) => (
+          <section key={index} className={`py-16 px-4 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+            <div className="max-w-4xl mx-auto">
+              <h2 className="text-3xl font-bold text-center mb-8 text-gray-900">
+                {section.title}
+              </h2>
+              <p className="text-lg text-gray-700 leading-relaxed text-center max-w-2xl mx-auto">
+                {section.content}
+              </p>
+              {section.cta && (
+                <div className="text-center mt-8">
+                  <a
+                    href={ctaUrl(`section-${index}`)}
+                    className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-8 rounded-xl transition-colors"
+                  >
+                    {section.cta}
+                  </a>
+                </div>
+              )}
+            </div>
+          </section>
+        ))}
+
+        {/* Footer CTA */}
+        <section className="bg-gray-900 text-white py-16 px-4">
+          <div className="max-w-2xl mx-auto text-center">
+            <h2 className="text-2xl font-bold mb-4">今すぐ始めましょう</h2>
+            <p className="text-gray-300 mb-8">{content.footer}</p>
+            <a
+              href={ctaUrl('footer')}
+              className="inline-block bg-amber-400 hover:bg-amber-300 text-gray-900 font-bold py-4 px-10 rounded-2xl text-xl transition-colors shadow-lg"
+            >
+              無料で始める
+            </a>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
+  // Original template for legacy configs
   return (
     <div>
       {/* Hero */}
