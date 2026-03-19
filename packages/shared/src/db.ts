@@ -72,16 +72,25 @@ if (isProduction && DATABASE_URL) {
 
   pool.query(`
     CREATE TABLE IF NOT EXISTS sns_accounts (
-      id          SERIAL PRIMARY KEY,
-      platform    TEXT NOT NULL,
-      account_name TEXT NOT NULL,
-      api_key     TEXT,
-      api_secret  TEXT,
-      access_token TEXT,
-      access_secret TEXT,
-      is_active   BOOLEAN DEFAULT true,
-      created_at  TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-      updated_at  TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+      id                   SERIAL PRIMARY KEY,
+      platform             TEXT NOT NULL,
+      account_name         TEXT NOT NULL,
+      theme                TEXT,
+      character_name       TEXT,
+      character_role       TEXT,
+      character_bio        TEXT,
+      character_tone       TEXT,
+      post_format          TEXT,
+      cta_style            TEXT,
+      forbidden_expressions TEXT,
+      visual_direction     TEXT,
+      api_key              TEXT,
+      api_secret           TEXT,
+      access_token         TEXT,
+      access_secret        TEXT,
+      is_active            BOOLEAN DEFAULT true,
+      created_at           TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+      updated_at           TIMESTAMP WITH TIME ZONE DEFAULT NOW()
     )
   `);
 
@@ -173,18 +182,36 @@ if (isProduction && DATABASE_URL) {
 
   sqliteDb.exec(`
     CREATE TABLE IF NOT EXISTS sns_accounts (
-      id           INTEGER PRIMARY KEY AUTOINCREMENT,
-      platform     TEXT NOT NULL,
-      account_name TEXT NOT NULL,
-      api_key      TEXT,
-      api_secret   TEXT,
-      access_token  TEXT,
-      access_secret TEXT,
-      is_active    INTEGER DEFAULT 1,
-      created_at   TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
-      updated_at   TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
+      id                    INTEGER PRIMARY KEY AUTOINCREMENT,
+      platform              TEXT NOT NULL,
+      account_name          TEXT NOT NULL,
+      theme                 TEXT,
+      character_name        TEXT,
+      character_role        TEXT,
+      character_bio         TEXT,
+      character_tone        TEXT,
+      post_format           TEXT,
+      cta_style             TEXT,
+      forbidden_expressions TEXT,
+      visual_direction      TEXT,
+      api_key               TEXT,
+      api_secret            TEXT,
+      access_token          TEXT,
+      access_secret         TEXT,
+      is_active             INTEGER DEFAULT 1,
+      created_at            TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now')),
+      updated_at            TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%SZ', 'now'))
     )
   `);
+
+  // Migrate existing sns_accounts tables
+  for (const col of [
+    'theme TEXT', 'character_name TEXT', 'character_role TEXT', 'character_bio TEXT',
+    'character_tone TEXT', 'post_format TEXT', 'cta_style TEXT',
+    'forbidden_expressions TEXT', 'visual_direction TEXT',
+  ]) {
+    try { sqliteDb.exec(`ALTER TABLE sns_accounts ADD COLUMN ${col}`); } catch {}
+  }
 
   sqliteDb.exec(`
     CREATE TABLE IF NOT EXISTS sns_posts (

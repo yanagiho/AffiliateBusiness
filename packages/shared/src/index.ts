@@ -1,6 +1,7 @@
 export type {
   Offer,
   ClickLog,
+  SNSAccount,
   DiagnosticOption,
   DiagnosticQuestion,
   DiagnosticResult,

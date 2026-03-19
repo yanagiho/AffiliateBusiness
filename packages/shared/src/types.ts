@@ -59,6 +59,27 @@ export interface LPFaq {
   answer: string;
 }
 
+export interface SNSAccount {
+  id: number;
+  platform: string;
+  account_name: string;
+  theme: string;
+  character_name: string;
+  character_role: string;
+  character_bio: string;
+  character_tone: string;
+  post_format: string;
+  cta_style: string;
+  forbidden_expressions: string;
+  visual_direction: string;
+  api_key?: string;
+  api_secret?: string;
+  access_token?: string;
+  access_secret?: string;
+  is_active: boolean | number;
+  created_at?: string;
+}
+
 export interface LPConfig {
   slug: string;
   title: string;

@@ -25,6 +25,17 @@ export interface LPContent {
   footer: string;
 }
 
+export async function generateText(prompt: string): Promise<string> {
+  const response = await anthropic.messages.create({
+    model: 'claude-sonnet-4-6',
+    max_tokens: 1000,
+    messages: [{ role: 'user', content: prompt }],
+  });
+  const content = response.content[0];
+  if (content.type !== 'text') throw new Error('Unexpected response type');
+  return content.text;
+}
+
 export async function generateLPContent(request: LPGenerationRequest): Promise<LPContent> {
   const prompt = `
 あなたはアフィリエイトLPの専門家です。以下の情報を基に、魅力的なLPコンテンツを生成してください。

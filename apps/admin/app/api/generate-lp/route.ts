@@ -45,23 +45,24 @@ export async function POST(request: NextRequest) {
 
     let snsResults: any[] = [];
     if (selectedAccountIds.length > 0) {
-      // Get selected accounts
+      // Get selected accounts with character info
       const accounts = await query.all(
-        `SELECT id, platform, account_name, api_key, api_secret, access_token, access_secret
+        `SELECT id, platform, account_name, theme, character_name, character_role,
+                character_bio, character_tone, post_format, cta_style,
+                forbidden_expressions, visual_direction,
+                api_key, api_secret, access_token, access_secret
          FROM sns_accounts
          WHERE id IN (${selectedAccountIds.map(() => '?').join(',')}) AND is_active`,
         selectedAccountIds
       );
 
-      // Post to each selected account
-      const platforms = accounts.map((account: any) => account.platform);
       snsResults = await postToMultipleSNS({
         title: lpContent.title,
         description: lpContent.subheadline,
         url: lpUrl,
         hashtags: body.keywords,
         targetAudience: body.targetAudience,
-      }, platforms, slug);
+      }, accounts as any[], slug);
     }
 
     return NextResponse.json({

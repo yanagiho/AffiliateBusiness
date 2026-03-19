@@ -1,14 +1,6 @@
 import { TwitterApi } from 'twitter-api-v2';
 import { query } from './db';
-
-function getTwitterClient(): TwitterApi {
-  return new TwitterApi({
-    appKey: process.env.TWITTER_API_KEY!,
-    appSecret: process.env.TWITTER_API_SECRET!,
-    accessToken: process.env.TWITTER_ACCESS_TOKEN!,
-    accessSecret: process.env.TWITTER_ACCESS_SECRET!,
-  });
-}
+import { SNSAccount } from './types';
 
 export interface SNSPostData {
   title: string;
@@ -21,64 +13,122 @@ export interface SNSPostData {
 export interface SNSPostResult {
   success: boolean;
   platform: string;
+  accountName?: string;
   postId?: string;
+  postText?: string;
   error?: string;
 }
 
-export async function postToTwitter(data: SNSPostData): Promise<SNSPostResult> {
+function getTwitterClient(account: Pick<SNSAccount, 'api_key' | 'api_secret' | 'access_token' | 'access_secret'>): TwitterApi {
+  return new TwitterApi({
+    appKey: account.api_key || process.env.TWITTER_API_KEY!,
+    appSecret: account.api_secret || process.env.TWITTER_API_SECRET!,
+    accessToken: account.access_token || process.env.TWITTER_ACCESS_TOKEN!,
+    accessSecret: account.access_secret || process.env.TWITTER_ACCESS_SECRET!,
+  });
+}
+
+// キャラクターの口調でClaude APIを使って投稿文を生成する
+async function generateCharacterPost(account: SNSAccount, data: SNSPostData): Promise<string> {
   try {
-    // Create engaging tweet content
+    const { generateText } = await import('./claude');
     const hashtags = data.hashtags.map(tag => `#${tag}`).join(' ');
-    const tweetText = `${data.title}
+    const isTwitter = account.platform === 'twitter';
 
-${data.description}
+    const prompt = `あなたは「${account.character_name}」というSNSアカウントの中の人です。
 
-詳細はこちら👇
-${data.url}
+キャラクター設定：
+- 役割：${account.character_role}
+- 口調：${account.character_tone}
+- 投稿フォーマット：${account.post_format}
+- CTA表現：${account.cta_style}
+- 禁止表現：${account.forbidden_expressions}
 
-${hashtags}`;
+以下のLPに関する投稿文を作成してください。
 
-    // Ensure tweet is within 280 characters
-    const truncatedText = tweetText.length > 280 ? tweetText.substring(0, 277) + '...' : tweetText;
+LP情報：
+- タイトル：${data.title}
+- 内容：${data.description}
+- URL：${data.url}
+- ターゲット：${data.targetAudience}
+- ハッシュタグ：${hashtags}
 
-    const tweet = await getTwitterClient().v2.tweet(truncatedText);
+${isTwitter
+  ? `Xの投稿文を作成してください。
+- 280文字以内
+- キャラクターの口調・フォーマットを守る
+- CTAを含める（URL込み）
+- 禁止表現は絶対に使わない
+- 本文のみ出力（説明不要）`
+  : `Instagramの投稿キャプションを作成してください。
+- 保存したくなる価値ある内容
+- キャラクターの口調・フォーマットを守る
+- CTAを含める（URL込み）
+- 禁止表現は絶対に使わない
+- 2000文字以内
+- 本文のみ出力（説明不要）`}`;
+
+    const text = await generateText(prompt);
+    return text.trim();
+  } catch {
+    // Claude APIが使えない場合はデフォルトフォーマット
+    const hashtags = data.hashtags.map(tag => `#${tag}`).join(' ');
+    return `${data.title}\n\n${data.description}\n\n${data.url}\n\n${hashtags}`;
+  }
+}
+
+export async function postToTwitter(
+  data: SNSPostData,
+  account: SNSAccount
+): Promise<SNSPostResult> {
+  try {
+    const postText = await generateCharacterPost(account, data);
+    const truncated = postText.length > 280 ? postText.substring(0, 277) + '...' : postText;
+
+    const tweet = await getTwitterClient(account).v2.tweet(truncated);
 
     return {
       success: true,
       platform: 'twitter',
+      accountName: account.account_name,
       postId: tweet.data.id,
+      postText: truncated,
     };
   } catch (error) {
-    console.error('Twitter post error:', error);
     return {
       success: false,
       platform: 'twitter',
+      accountName: account.account_name,
       error: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }
 
-export async function postToMultipleSNS(data: SNSPostData, platforms: string[] = ['twitter'], lpSlug?: string): Promise<SNSPostResult[]> {
+export async function postToMultipleSNS(
+  data: SNSPostData,
+  accounts: SNSAccount[],
+  lpSlug?: string
+): Promise<SNSPostResult[]> {
   const results: SNSPostResult[] = [];
 
-  for (const platform of platforms) {
+  for (const account of accounts) {
     let result: SNSPostResult;
-    switch (platform) {
+
+    switch (account.platform) {
       case 'twitter':
-        result = await postToTwitter(data);
+        result = await postToTwitter(data, account);
         break;
-      // Add other platforms here (Facebook, Instagram, etc.)
       default:
         result = {
           success: false,
-          platform,
-          error: 'Platform not supported',
+          platform: account.platform,
+          accountName: account.account_name,
+          error: `${account.platform} は未対応です`,
         };
     }
 
     results.push(result);
 
-    // Save to database if lpSlug is provided
     if (lpSlug) {
       await query.run(
         `INSERT INTO sns_posts (lp_slug, platform, post_id, content, success, error_msg)
@@ -87,7 +137,7 @@ export async function postToMultipleSNS(data: SNSPostData, platforms: string[] =
           lpSlug,
           result.platform,
           result.postId || null,
-          JSON.stringify(data),
+          result.postText || JSON.stringify(data),
           result.success ? 1 : 0,
           result.error || null,
         ]
