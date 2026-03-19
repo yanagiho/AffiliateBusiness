@@ -48,11 +48,11 @@ pnpm dev                    # 全アプリ同時起動
 
 | ファイル | 役割 |
 |---------|------|
-| `packages/shared/src/types.ts` | 全型定義 (Offer, ClickLog, LPConfig, DiagnosticConfig等) |
+| `packages/shared/src/types.ts` | 全型定義 (Offer, ClickLog, SNSAccount, LPConfig, DiagnosticConfig等) |
 | `packages/shared/src/db.ts` | DB抽象化レイヤー（SQLite/PostgreSQL対応）+ `?`→`$N` 変換 |
 | `packages/shared/src/index.ts` | `db`, `query` を含む全エクスポート |
-| `packages/shared/src/claude.ts` | Claude API統合（LP自動生成、モデル: claude-sonnet-4-6） |
-| `packages/shared/src/sns.ts` | SNS投稿機能（Twitter API v2、遅延初期化） |
+| `packages/shared/src/claude.ts` | Claude API統合（LP自動生成・投稿文生成、モデル: claude-sonnet-4-6） |
+| `packages/shared/src/sns.ts` | SNS投稿機能（Twitter API v2・キャラクター別投稿生成） |
 | `packages/shared/src/data/offers.ts` | オファー一覧（新規追加はここ） |
 | `packages/shared/src/data/lp.ts` | LP設定一覧（新規追加はここ） |
 | `packages/shared/src/data/shindan.ts` | 診断設定一覧（新規追加はここ） |
@@ -61,6 +61,8 @@ pnpm dev                    # 全アプリ同時起動
 | `apps/web/lib/db.ts` | `@affiliate/shared` から `db`, `query` を re-export |
 | `apps/admin/app/auth.ts` | NextAuth.js認証（認証情報は環境変数 ADMIN_USERNAME/PASSWORD） |
 | `apps/admin/app/page.tsx` | クリックログ一覧・集計ダッシュボード |
+| `apps/admin/app/sns-accounts/page.tsx` | SNSアカウント管理（JSONインポート・APIキー設定・キャラ一覧） |
+| `apps/admin/app/api/sns-accounts/route.ts` | SNSアカウントCRUD API（GET/POST一括インポート/PUT APIキー更新） |
 | `apps/admin/middleware.ts` | 認証ミドルウェア |
 
 ## DB
@@ -73,10 +75,11 @@ pnpm dev                    # 全アプリ同時起動
 - テーブル:
   - `click_logs` (id, offer_id, clicked_at, ip, user_agent, referer, utm_*)
   - `lp_configs` (slug, title, description, config, target_audience, offer_id, content, keywords, genre, created_at, updated_at)
-  - `sns_accounts` (id, platform, account_name, api_key, api_secret, access_token, access_secret, is_active, created_at, updated_at)
+  - `sns_accounts` (id, platform, account_name, theme, character_name, character_role, character_bio, character_tone, post_format, cta_style, forbidden_expressions, visual_direction, api_key, api_secret, access_token, access_secret, is_active, created_at, updated_at)
   - `sns_posts` (id, lp_slug, platform, post_id, content, success, error_msg, created_at)
   - `shindan_configs` (slug, title, description, config, created_at, updated_at)
 - apps/web が書き込み担当、apps/admin は読み書き両方
+- sns_accounts への既存DBマイグレーション: ALTER TABLE で自動追加（db.ts内）
 
 ## Next.js 15 注意点
 
@@ -101,13 +104,32 @@ pnpm dev                    # 全アプリ同時起動
 
 ## P1 実装完了（2026-03-18 完了）
 
-- [x] オファー・LP設定のDB管理（現在はTSハードコード） ← 完了
+- [x] オファー・LP設定のDB管理 ← 完了
 - [x] 管理画面認証（NextAuth.js） ← 完了
-- [x] 本番デプロイ設定（Vercel / Cloudflare Workers） ← 完了
+- [x] 本番デプロイ設定（Cloudflare Pages + 外部PostgreSQL） ← 完了
 - [x] PostgreSQL対応（本番DB） ← 完了
 - [x] Claude API連携によるLP自動生成 ← 完了
 - [x] SNS投稿自動化基盤 ← 完了
 - [x] 複数ジャンル・複数アカウント対応 ← 完了
+
+## P2 実装完了（2026-03-19 完了）
+
+- [x] SNSアカウントのキャラクター管理システム ← 完了
+  - 5テーマ×2媒体=10アカウント構成（転職・投資・家計改善・恋愛・野球）
+  - キャラクター9項目（name/role/bio/tone/post_format/cta_style/forbidden_expressions/visual_direction/theme）
+  - ChatGPT生成JSONを管理画面から一括インポート
+  - 各アカウントに個別APIキーを設定可能
+  - LP生成時にClaude APIがキャラの口調・禁止表現を考慮して投稿文を自動生成
+- [x] SNSアカウント管理UI（テーマ別カード表示・JSONインポート・APIキー設定モーダル）
+- [x] README.md を非エンジニア向け運用マニュアルに全面改訂
+
+## P3 予定（未着手）
+
+- [ ] Cloudflare Pages へのデプロイ（Neon/Supabase PostgreSQL連携）
+- [ ] Instagram Graph API 対応（画像生成・ストレージ含む）
+- [ ] オファー管理UI（管理画面から追加・編集）
+- [ ] 5テーマ分のLP作成（アフィリエイトリンク取得後）
+- [ ] SNSアカウントのAPIキー登録（Twitter Developer Portal申請後）
 
 ## バグ修正履歴（2026-03-18）
 
@@ -128,16 +150,35 @@ pnpm dev                    # 全アプリ同時起動
 | 認証情報がハードコード | `admin/app/auth.ts` |
 | Claude モデルが旧バージョン（`claude-3-sonnet-20240229`） | `shared/src/claude.ts` |
 
+## SNSキャラクター設計（2026-03-19 確定）
+
+ChatGPTで設計済み。5テーマ×2媒体=10アカウント。
+
+| テーマ | X (Twitter) | Instagram |
+|-------|------------|-----------|
+| 転職 | @career_scope_jp「キャリスコ編集部」論理的・比較重視 | @career_map_studio「キャリア地図案内人」初心者向け・カルーセル |
+| 投資 | @asset_brief_jp「アセット速報室」冷静・要点主義 | @money_palette_lab「まねー図解ラボ」先生風・図解 |
+| 家計改善 | @kakei_reset_note「家計リセット編集室」実務的・切れ味 | @kurashi_seiri_book「くらし整えノート」寄り添い型 |
+| 恋愛 | @love_signal_edit「恋愛シグナル編集部」観察的・辛口 | @relation_compass_room「関係コンパス」共感的・落ち着き |
+| 野球 | @baseball_point_jp「野球観戦ポイント室」熱量あり冷静 | @baseball_view_studio「やきゅう見方スタジオ」初心者向け |
+
+- 禁止表現・CTAスタイル・投稿フォーマットはDB管理（JSONインポート済み）
+- Instagram は現在未対応（Graph API対応はP3）
+
 ## プロジェクト状態
 
 ✅ **ビルド・型チェック通過**（3/3 アプリ）
 ✅ **ローカル起動可能**（`.env.local` 設定後）
-⚠️ **本番運用前に必要な作業**
-- `.env.local` の各APIキーを実際の値に設定
-- `AUTH_SECRET` を生成・設定（`openssl rand -base64 32`）
-- `ADMIN_PASSWORD` をデフォルトから変更
+✅ **SNSキャラクター設計完了・DB管理実装済み**
+
+⚠️ **次に必要な作業（優先順）**
+1. アフィリエイトASP登録済み → 5テーマ分のURLを取得してオファー登録・LP作成
+2. Twitter Developer Portal でAPIキーを取得 → 管理画面からアカウント別に設定
+3. Cloudflare Pages + 外部PostgreSQL でデプロイ
+4. `AUTH_SECRET` を生成・設定（`openssl rand -base64 32`）
+5. `ADMIN_PASSWORD` をデフォルトから変更
 
 📚 **ドキュメント**
-- README.md: 詳細運用マニュアル
+- README.md: 非エンジニア向け運用マニュアル
 - CLAUDE.md: 技術仕様・実装状況（本ファイル）
 - docs/architecture.md: アーキテクチャ設計
