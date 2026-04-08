@@ -97,12 +97,15 @@ export default function GenerateLPPage() {
 
       {/* タブ */}
       <div className="mb-6">
-        <nav className="flex space-x-4" aria-label="Tabs">
+        <nav className="flex flex-wrap gap-2" aria-label="Tabs">
           <a href="/" className="text-gray-500 hover:text-gray-700 px-3 py-2 font-medium text-sm rounded-md">
             クリックログ
           </a>
           <a href="/generate-lp" className="bg-indigo-100 text-indigo-700 px-3 py-2 font-medium text-sm rounded-md">
             LP生成
+          </a>
+          <a href="/offers" className="text-gray-500 hover:text-gray-700 px-3 py-2 font-medium text-sm rounded-md">
+            オファー管理
           </a>
           <a href="/sns-history" className="text-gray-500 hover:text-gray-700 px-3 py-2 font-medium text-sm rounded-md">
             SNS履歴

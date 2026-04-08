@@ -22,6 +22,7 @@ interface SNSAccount {
 const TABS = [
   { href: '/', label: 'クリックログ' },
   { href: '/generate-lp', label: 'LP生成' },
+  { href: '/offers', label: 'オファー管理' },
   { href: '/sns-history', label: 'SNS履歴' },
   { href: '/genres', label: 'ジャンル管理' },
   { href: '/sns-accounts', label: 'SNSアカウント' },

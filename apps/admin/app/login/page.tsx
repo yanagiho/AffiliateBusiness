@@ -77,9 +77,7 @@ export default function LoginPage() {
             </button>
           </div>
 
-          <div className="text-sm text-center text-gray-600">
-            デフォルト: admin / password
-          </div>
+
         </form>
       </div>
     </div>

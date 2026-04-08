@@ -1,5 +1,4 @@
-import { Pool } from 'pg';
-import Database from 'better-sqlite3';
+import { Pool } from '@neondatabase/serverless';
 import fs from 'fs';
 import path from 'path';
 
@@ -10,7 +9,7 @@ let db: any;
 let isPostgres = false;
 
 if (isProduction && DATABASE_URL) {
-  // PostgreSQL for production
+  // PostgreSQL for production (Neon serverless - Edge/Cloudflare compatible)
   const pool = new Pool({
     connectionString: DATABASE_URL,
   });
@@ -110,7 +109,7 @@ if (isProduction && DATABASE_URL) {
   db = pool;
   isPostgres = true;
 } else {
-  // SQLite for development
+  // SQLite for development (better-sqlite3 is loaded lazily to avoid import errors on Vercel)
   const DB_PATH =
     process.env.DATABASE_PATH ?? path.join(process.cwd(), '../../data/clicks.db');
 
@@ -119,7 +118,9 @@ if (isProduction && DATABASE_URL) {
     fs.mkdirSync(dir, { recursive: true });
   }
 
-  const sqliteDb = new Database(DB_PATH);
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const BetterSqlite3 = require('better-sqlite3') as typeof import('better-sqlite3');
+  const sqliteDb = new BetterSqlite3(DB_PATH);
 
   sqliteDb.exec(`
     CREATE TABLE IF NOT EXISTS click_logs (
