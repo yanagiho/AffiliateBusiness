@@ -80,7 +80,17 @@ export default function GenerateLPPage() {
       const result = await response.json();
       setGeneratedContent(result.content);
       setGeneratedSlug(result.slug);
-      setGeneratedLpUrl(result.lpUrl || '');
+      // Derive web URL from current admin URL
+      const currentOrigin = window.location.origin;
+      let webUrl: string;
+      if (currentOrigin.includes('affiliate-admin')) {
+        webUrl = `${currentOrigin.replace('affiliate-admin', 'affiliate-web')}/lp/${result.slug}`;
+      } else if (currentOrigin.includes('localhost:3001')) {
+        webUrl = `http://localhost:3000/lp/${result.slug}`;
+      } else {
+        webUrl = result.lpUrl || `/lp/${result.slug}`;
+      }
+      setGeneratedLpUrl(webUrl);
       setSnsResults(result.snsResults || []);
     } catch (error) {
       console.error('Error generating LP:', error);
