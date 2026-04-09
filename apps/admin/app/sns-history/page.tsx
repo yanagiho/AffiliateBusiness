@@ -85,7 +85,7 @@ export default async function SNSHistoryPage() {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     <a
-                      href={`http://localhost:3000/lp/${post.lp_slug}`}
+                      href={`${process.env.NEXT_PUBLIC_BASE_URL || ''}/lp/${post.lp_slug}`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-indigo-600 hover:text-indigo-900 underline"
