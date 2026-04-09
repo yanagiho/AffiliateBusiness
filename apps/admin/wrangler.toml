@@ -6,4 +6,4 @@ compatibility_flags = ["nodejs_compat"]
 assets = { directory = ".open-next/assets" }
 
 [vars]
-NEXT_PUBLIC_BASE_URL = "https://affiliate-web.yanagiho.workers.dev"
+WEB_BASE_URL = "https://affiliate-web.yanagiho.workers.dev"

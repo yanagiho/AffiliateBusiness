@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     );
 
     // Post to selected SNS platforms
-    const lpUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/lp/${slug}`;
+    const lpUrl = `${process.env.WEB_BASE_URL || process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/lp/${slug}`;
     const selectedAccountIds = (body as any).snsAccountIds || [];
 
     let snsResults: any[] = [];
