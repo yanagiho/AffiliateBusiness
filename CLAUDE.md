@@ -43,7 +43,7 @@ pnpm dev                    # 全アプリ同時起動
 | `ANTHROPIC_API_KEY` | Claude API（LP自動生成） | LP生成使用時 |
 | `DATABASE_URL` | PostgreSQL接続文字列（未設定=SQLite） | 本番必須 |
 | `TWITTER_API_KEY` 他 | Twitter API v2認証情報 | SNS投稿使用時 |
-| `NEXT_PUBLIC_BASE_URL` | LP URLの生成に使用 | 本番必須 |
+| `WEB_BASE_URL` | LP URLの生成に使用（admin側。`wrangler.toml` [vars] で設定） | 本番必須 |
 
 ## 重要ファイル
 
@@ -157,10 +157,24 @@ pnpm dev                    # 全アプリ同時起動
 - [x] Neon PostgreSQL 作成（ap-southeast-1 / PostgreSQL 17） ← 2026-04-05 完了
 - [x] Cloudflare Workers デプロイ実行（web / admin） ← 2026-04-05 完了
 - [x] `open-next.config.ts` を @opennextjs/cloudflare v1.17 形式に更新 ← 2026-04-05 完了
-- [ ] 5テーマ分のLP作成（アフィリエイトリンク取得後・管理画面から実施）
-- [ ] SNSアカウントのAPIキー登録（Twitter Developer Portal申請後）
-- [ ] Instagram Graph API 対応（画像生成・ストレージ含む）
-- [ ] `ADMIN_PASSWORD` を本番用に変更
+- [x] LP生成機能のバグ修正・運用開始 ← 2026-04-09 完了
+  - Claude APIプロンプトにJSON構造を厳密指定（レスポンスのキー名揺れ・ネスト対応）
+  - 日本語タイトルのスラッグ生成修正（空スラッグ防止）
+  - `lp_configs.config` NOT NULL制約エラー修正
+  - エラー詳細をAPIレスポンスに含めるよう改善
+- [x] LPテンプレートのデザイン大幅改善 ← 2026-04-09 完了
+  - グラデーション背景・装飾要素・信頼バー・ステップセクション追加
+  - カード型レイアウト・アイコンバッジ・番号付きリスト対応
+  - アニメーション付きCTAボタン
+- [x] LP生成結果のURL表示修正（localhost→本番URL） ← 2026-04-09 完了
+  - クライアント側でwindow.locationからadmin→webのURL変換
+  - `WEB_BASE_URL` 環境変数を `wrangler.toml` [vars] に設定
+- [x] `ADMIN_PASSWORD` を本番用に変更 ← 2026-04-09 完了
+- [x] 転職テーマのLP作成・本番公開 ← 2026-04-09 完了
+- [ ] 残り4テーマ分のLP作成（投資・家計改善・恋愛・野球。アフィリエイトリンク取得後）
+- [ ] X (Twitter) アカウント作成・Developer Portal申請（x1〜x5@gade.jp で申請予定）
+- [ ] SNSアカウントのAPIキー登録（Developer Portal承認後）
+- [ ] Instagram Graph API 対応（画像生成・ストレージ含む。x6〜x10@gade.jp を使用予定）
 
 ## バグ修正履歴（2026-03-18）
 
@@ -206,15 +220,17 @@ ChatGPTで設計済み。5テーマ×2媒体=10アカウント。
 - **Neon PostgreSQL**: ap-southeast-1（シンガポール）/ PostgreSQL 17 / プロジェクト名: AB_GADE
 - **Cloudflare Workers**: affiliate-web / affiliate-admin
 - **admin 環境変数（secret設定済み）**: `DATABASE_URL`, `AUTH_SECRET`, `ADMIN_USERS`, `ANTHROPIC_API_KEY`
+- **admin 環境変数（wrangler.toml [vars]）**: `WEB_BASE_URL`
 - **web 環境変数（secret設定済み）**: `DATABASE_URL`
 
-## 認証（2026-04-08 更新）
+## 認証（2026-04-09 更新）
 
 - 複数ユーザー対応済み（`ADMIN_USERS` 環境変数にJSON配列で管理）
 - 旧形式（`ADMIN_USERNAME`/`ADMIN_PASSWORD`）にもフォールバック対応
 - ログイン画面からデフォルト認証情報の表示を削除済み
+- 本番パスワード変更済み（2026-04-09）: admin + hakamagi の2アカウント
 
-## プロジェクト状態（2026-04-08 時点）
+## プロジェクト状態（2026-04-09 時点）
 
 ✅ **ビルド・型チェック通過**（3/3 アプリ）
 ✅ **ローカル起動可能**（`.env.local` 設定後）
@@ -224,13 +240,22 @@ ChatGPTで設計済み。5テーマ×2媒体=10アカウント。
 ✅ **オファー管理UI実装済み**（`/offers` ページ）
 ✅ **本番動作確認**（web / admin 両方200 OK）
 ✅ **複数ユーザー認証対応**（2アカウント設定済み）
-✅ **Claude APIレスポンスのJSONパース改善**（コードブロック除去対応）
+✅ **Claude APIレスポンスのJSONパース改善**（キー名揺れ・ネスト構造対応）
+✅ **LP生成・本番公開の運用フロー確立**（転職テーマで動作確認済み）
+✅ **LPテンプレートのリッチデザイン化**（グラデーション・カード・アニメーション）
+✅ **本番パスワード変更済み**（2アカウント）
+✅ **Anthropic APIクレジット確認済み**（$5.00残高、LP生成正常動作）
 
 ⚠️ **次に必要な作業（優先順）**
-1. Anthropic APIクレジット問題の解消（$5追加済みだがAPI側で認識されていない）
-2. 管理画面 `/offers` でオファー登録 → `/generate-lp` でLP生成
-3. SNSに手動投稿して運用開始
-4. Twitter Developer Portal でAPIキーを取得 → 管理画面からアカウント別に設定
+1. X (Twitter) アカウント作成（x1〜x5@gade.jp）→ Developer Portal 申請
+2. Developer Portal 承認後、APIキーを管理画面から登録
+3. 残り4テーマ分のLP作成（アフィリエイトリンク取得後）
+4. Instagram Graph API 対応（x6〜x10@gade.jp を使用予定）
+
+## SNS用メールアドレス（2026-04-09 確定）
+
+- X (Twitter): x1@gade.jp 〜 x5@gade.jp（5テーマ分）
+- Instagram: x6@gade.jp 〜 x10@gade.jp（将来用）
 
 📚 **ドキュメント**
 - README.md: 非エンジニア向け運用マニュアル
