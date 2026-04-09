@@ -17,20 +17,24 @@ export async function POST(request: NextRequest) {
     // Generate LP content using Claude
     const lpContent = await generateLPContent(body);
 
-    // Create slug from title
-    const slug = body.title
+    // Create slug from title (fallback to timestamp if title is non-ASCII only)
+    let slug = body.title
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/^-+|-+$/g, '');
+    if (!slug) {
+      slug = `lp-${Date.now()}`;
+    }
 
     // Save to database (omit timestamps; rely on column DEFAULTs)
     await query.run(
-      `INSERT INTO lp_configs (slug, title, description, target_audience, offer_id, content, keywords, genre)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO lp_configs (slug, title, description, config, target_audience, offer_id, content, keywords, genre)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         slug,
         body.title,
         body.description,
+        '{}',
         body.targetAudience,
         body.offerId,
         JSON.stringify(lpContent),
@@ -73,8 +77,9 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('LP generation error:', error);
+    const message = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { error: 'Failed to generate LP content' },
+      { error: 'Failed to generate LP content', detail: message },
       { status: 500 }
     );
   }
