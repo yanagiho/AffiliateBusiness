@@ -18,6 +18,7 @@ export default function GenerateLPPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedContent, setGeneratedContent] = useState<LPContent | null>(null);
   const [generatedSlug, setGeneratedSlug] = useState<string>('');
+  const [generatedLpUrl, setGeneratedLpUrl] = useState<string>('');
   const [snsResults, setSnsResults] = useState<SNSPostResult[]>([]);
   const [offers, setOffers] = useState<Offer[]>([]);
   const [genres, setGenres] = useState<{id: number, name: string}[]>([]);
@@ -79,6 +80,7 @@ export default function GenerateLPPage() {
       const result = await response.json();
       setGeneratedContent(result.content);
       setGeneratedSlug(result.slug);
+      setGeneratedLpUrl(result.lpUrl || '');
       setSnsResults(result.snsResults || []);
     } catch (error) {
       console.error('Error generating LP:', error);
@@ -291,8 +293,8 @@ export default function GenerateLPPage() {
             <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-md">
               <p className="text-green-800 font-medium">LPが正常に生成されました！</p>
               <p className="text-green-700 text-sm mt-1">
-                LP URL: <a href={`http://localhost:3000/lp/${generatedSlug}`} target="_blank" rel="noopener noreferrer" className="underline">
-                  http://localhost:3000/lp/{generatedSlug}
+                LP URL: <a href={generatedLpUrl || `/lp/${generatedSlug}`} target="_blank" rel="noopener noreferrer" className="underline">
+                  {generatedLpUrl || `/lp/${generatedSlug}`}
                 </a>
               </p>
               {snsResults.length > 0 && (

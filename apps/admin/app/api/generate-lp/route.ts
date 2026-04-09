@@ -72,6 +72,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       slug,
+      lpUrl,
       content: lpContent,
       snsResults,
     });
